@@ -1,0 +1,71 @@
+kind: pipeline
+type: docker
+name: app
+
+platform:
+  os: linux
+  arch: amd64
+
+clone:
+  depth: 3
+
+steps:
+  - name: build
+    image: golang:1.15
+    commands:
+      - go env -w GOPROXY=https://goproxy.cn,direct
+      - go env -w GOPRIVATE=
+      - go version
+      - make
+    when:
+      event:
+        exclude:
+          - tag
+
+  - name: pre-release
+    image: golang:1.15
+    volumes:
+      - name: release_files
+        path: /release
+    commands:
+      - git fetch --tags
+      - go env -w GOPROXY=https://goproxy.cn,direct
+      - go env -w GOPRIVATE=
+      - go version
+      - command -v xz || (apt-get update && apt-get install -y xz-utils)
+      - wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz -O - | tar -Jxv -C /tmp && cp /tmp/upx-3.96-amd64_linux/upx /bin
+      - make clean
+      - BUILDVERSION=${DRONE_TAG} NO_DEBUG=1 ENABLE_UPX=1 make -j$(nproc) cross_build
+      - cp build/api_* /release/
+      - cp api.toml /release/api.toml
+    when:
+      status:
+        - success
+      event:
+        - tag
+
+  - name: release
+    image: plugins/gitea-release
+    volumes:
+      - name: release_files
+        path: /release
+    settings:
+      api_key:
+        from_secret: gitea.api_key
+      base_url: http://
+      title: Release ${DRONE_TAG}
+      files:
+        - /release/api_*
+        - /release/api.toml
+      file_exists: overwrite
+      checksum:
+        - sha256
+    when:
+      status:
+        - success
+      event:
+        - tag
+
+volumes:
+  - name: release_files
+    temp: { }

@@ -1,0 +1,15 @@
+######################
+# APP Server Config
+######################
+
+# Server监听地址
+#address = "0.0.0.0:3000"
+
+# URL前缀
+#url_prefix = "/api/v1/"
+
+# MySQL数据源
+#mysql_dsn = ""
+
+# Redis数据源
+#redis_dsn = ""

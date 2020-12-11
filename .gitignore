@@ -1,0 +1,22 @@
+# IDE
+/.idea
+
+# config
+/cmd/*.toml
+!/cmd/example.*.toml
+
+# go build
+/build
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# go test / coverage
+*.test
+*.out
+__debug_bin
+
+# others
+.DS_Store
